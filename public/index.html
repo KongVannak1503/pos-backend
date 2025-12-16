@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System - Customer Display</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .connection-status.connected {
+            background: #43e97b;
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background: #f5576c;
+            color: white;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* POS Section */
+        .pos-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1a1a1a;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+        }
+
+        .item-card {
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            text-align: center;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .item-card.beverages {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .item-card.pastries {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .item-card.meals {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .item-card.snacks {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .item-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .item-price {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .item-category {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        /* Order Section */
+        .order-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 40px);
+            overflow: hidden;
+        }
+
+        .order-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .order-id {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .order-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .order-item-info {
+            flex: 1;
+        }
+
+        .order-item-name {
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+
+        .order-item-details {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .order-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 6px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .qty-btn:hover {
+            background: #5568d3;
+        }
+
+        .qty-display {
+            min-width: 30px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .remove-btn {
+            background: #f5576c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .remove-btn:hover {
+            background: #e04055;
+        }
+
+        .order-empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .order-empty-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .order-totals {
+            padding: 20px;
+            border-top: 2px solid #f0f2f5;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .total-row.final {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            padding-top: 15px;
+            border-top: 2px solid #667eea;
+            margin-top: 10px;
+        }
+
+        .order-actions {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            border-top: 2px solid #f0f2f5;
+        }
+
+        .action-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.charge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+            font-size: 18px;
+            padding: 20px;
+        }
+
+        .action-btn.charge:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5568d3 0%, #653a8a 100%);
+            transform: translateY(-2px);
+        }
+
+        .action-btn.cancel {
+            background: #f5576c;
+            color: white;
+        }
+
+        .action-btn.cancel:hover:not(:disabled) {
+            background: #e04055;
+        }
+
+        .action-btn.discount {
+            background: #ffa726;
+            color: white;
+        }
+
+        .action-btn.discount:hover:not(:disabled) {
+            background: #fb8c00;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Payment Modal */
+        .payment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .payment-modal.active {
+            display: flex;
+        }
+
+        .payment-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .payment-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .payment-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .payment-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .payment-amount {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .payment-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .payment-total {
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .payment-input-group {
+            margin-bottom: 25px;
+        }
+
+        .payment-input-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .payment-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 24px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .payment-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .payment-change {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .payment-change-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .payment-change-amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: #43e97b;
+        }
+
+        .payment-change-amount.negative {
+            color: #f5576c;
+        }
+
+        .payment-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .payment-btn.confirm {
+            background: #43e97b;
+            color: white;
+            grid-column: 1 / -1;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .payment-btn.confirm:hover:not(:disabled) {
+            background: #38d66a;
+        }
+
+        .payment-btn.confirm:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .payment-btn.cancel-payment {
+            background: #f5576c;
+            color: white;
+            grid-column: 1 / -1;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .payment-btn.cancel-payment:hover {
+            background: #e04055;
+        }
+
+        .quick-amounts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quick-amount-btn {
+            padding: 12px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .quick-amount-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #43e97b;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .order-section {
+                max-height: 500px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="connection-status disconnected" id="connectionStatus">
+        <div class="status-dot"></div>
+        <span id="statusText">Connecting...</span>
+    </div>
+
+    <div class="container">
+        <div class="pos-section">
+            <div class="header">
+                <h1>🛒 Point of Sale System</h1>
+                <p class="subtitle">Click items to add - Syncs with Flutter display!</p>
+            </div>
+            <div class="items-grid" id="itemsGrid"></div>
+        </div>
+
+        <div class="order-section">
+            <div class="order-header">
+                Current Order
+                <div class="order-id" id="orderId">No active order</div>
+            </div>
+            <div class="order-items" id="orderItems">
+                <div class="order-empty">
+                    <div class="order-empty-icon">🛍️</div>
+                    <p>No items in order</p>
+                    <p style="font-size: 12px; margin-top: 10px;">Click items to start</p>
+                </div>
+            </div>
+            <div class="order-totals" id="orderTotals" style="display: none;">
+                <div class="total-row"><span>Subtotal:</span><span id="subtotal">$0.00</span></div>
+                <div class="total-row"><span>Tax (8.975%):</span><span id="tax">$0.00</span></div>
+                <div class="total-row"><span>Discount:</span><span id="discount">$0.00</span></div>
+                <div class="total-row final"><span>TOTAL:</span><span id="total">$0.00</span></div>
+            </div>
+            <div class="order-actions">
+                <button class="action-btn discount" onclick="applyDiscount()" id="discountBtn" disabled>💰
+                    Discount</button>
+                <button class="action-btn cancel" onclick="cancelOrder()" id="cancelBtn" disabled>❌ Cancel</button>
+                <button class="action-btn charge" onclick="openPaymentModal()" id="chargeBtn" disabled>💳 CHARGE - PAY
+                    NOW</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="payment-modal" id="paymentModal">
+        <div class="payment-content">
+            <div class="payment-header">
+                <div class="payment-title">💳 Payment</div>
+                <div class="payment-subtitle">Enter received amount</div>
+            </div>
+            <div class="payment-amount">
+                <div class="payment-label">Total Amount</div>
+                <div class="payment-total" id="modalTotal">$0.00</div>
+            </div>
+            <div class="payment-input-group">
+                <label class="payment-input-label">Amount Received:</label>
+                <input type="number" class="payment-input" id="receivedAmount" placeholder="0.00" step="0.01" min="0"
+                    oninput="calculateChange()">
+            </div>
+            <div class="quick-amounts">
+                <button class="quick-amount-btn" onclick="setQuickAmount(10)">$10</button>
+                <button class="quick-amount-btn" onclick="setQuickAmount(20)">$20</button>
+                <button class="quick-amount-btn" onclick="setQuickAmount(50)">$50</button>
+                <button class="quick-amount-btn" onclick="setQuickAmount(100)">$100</button>
+                <button class="quick-amount-btn" onclick="setExactAmount()">Exact</button>
+                <button class="quick-amount-btn" onclick="clearAmount()">Clear</button>
+            </div>
+            <div class="payment-change" id="changeDisplay" style="display: none;">
+                <div class="payment-change-label">Change</div>
+                <div class="payment-change-amount" id="changeAmount">$0.00</div>
+            </div>
+            <div class="payment-buttons">
+                <button class="payment-btn cancel-payment" onclick="closePaymentModal()">Cancel</button>
+                <button class="payment-btn confirm" onclick="confirmPayment()" id="confirmPaymentBtn" disabled>✓ Confirm
+                    Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        let currentOrder = null;
+        let isConnected = false;
+
+        const menuItems = [
+            {
+                id: 'coffee-latte',
+                name: 'Coffee Latte',
+                price: 4.50,
+                category: 'beverages',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'espresso',
+                name: 'Espresso',
+                price: 3.00,
+                category: 'beverages',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'cappuccino',
+                name: 'Cappuccino',
+                price: 4.00,
+                category: 'beverages',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'iced-coffee',
+                name: 'Iced Coffee',
+                price: 3.75,
+                category: 'beverages',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'croissant',
+                name: 'Chocolate Croissant',
+                price: 3.25,
+                category: 'pastries',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'muffin',
+                name: 'Blueberry Muffin',
+                price: 2.75,
+                category: 'pastries',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'bagel',
+                name: 'Cream Cheese Bagel',
+                price: 3.50,
+                category: 'pastries',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'danish',
+                name: 'Apple Danish',
+                price: 3.00,
+                category: 'pastries',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'sandwich',
+                name: 'Club Sandwich',
+                price: 8.50,
+                category: 'meals',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'salad',
+                name: 'Caesar Salad',
+                price: 7.00,
+                category: 'meals',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'wrap',
+                name: 'Chicken Wrap',
+                price: 7.50,
+                category: 'meals',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'soup',
+                name: 'Tomato Soup',
+                price: 5.50,
+                category: 'meals',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'chips',
+                name: 'Potato Chips',
+                price: 1.50,
+                category: 'snacks',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'cookie',
+                name: 'Chocolate Cookie',
+                price: 2.00,
+                category: 'snacks',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'brownie',
+                name: 'Fudge Brownie',
+                price: 2.50,
+                category: 'snacks',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            },
+            {
+                id: 'fruit',
+                name: 'Fresh Fruit Cup',
+                price: 3.50,
+                category: 'snacks',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Latte_and_dark_coffee.jpg'
+            }
+        ];
+
+        function initializeMenu() {
+            document.getElementById('itemsGrid').innerHTML = menuItems.map(item => `
+                <div class="item-card ${item.category}" onclick="addItemToOrder('${item.id}')">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-price">$${item.price.toFixed(2)}</div>
+                    <div class="item-category">${item.category}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            if (connected) {
+                statusEl.className = 'connection-status connected';
+                statusText.textContent = '✓ Connected';
+                isConnected = true;
+            } else {
+                statusEl.className = 'connection-status disconnected';
+                statusText.textContent = '✗ Offline';
+                isConnected = false;
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (response.ok) { updateConnectionStatus(true); return true; }
+            } catch (error) {
+                updateConnectionStatus(false); return false;
+            }
+        }
+
+        async function addItemToOrder(itemId) {
+            const item = menuItems.find(i => i.id === itemId);
+            if (!item) return;
+            if (!isConnected) await checkConnection();
+            try {
+                const response = await fetch(`${API_URL}/api/pos/add-item`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                });
+                const data = await response.json();
+                console.log(data);
+
+                if (data.success) {
+                    currentOrder = data.order;
+                    updateOrderDisplay();
+                    showNotification(`✓ ${item.name} added!`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                isConnected = false;
+                updateConnectionStatus(false);
+            }
+        }
+
+        function updateOrderDisplay() {
+            if (!currentOrder || currentOrder.items.length === 0) {
+                document.getElementById('orderItems').innerHTML = `<div class="order-empty"><div class="order-empty-icon">🛍️</div><p>No items</p></div>`;
+                document.getElementById('orderTotals').style.display = 'none';
+                document.getElementById('orderId').textContent = 'No active order';
+                document.getElementById('cancelBtn').disabled = true;
+                document.getElementById('discountBtn').disabled = true;
+                document.getElementById('chargeBtn').disabled = true;
+                return;
+            }
+            document.getElementById('orderId').textContent = currentOrder.orderId;
+            document.getElementById('orderItems').innerHTML = currentOrder.items.map(item => `
+                <div class="order-item">
+                    <div class="order-item-info">
+                        <div class="order-item-name">${item.name}</div>
+                        <div class="order-item-details">$${item.price.toFixed(2)} each</div>
+                    </div>
+                    <div class="order-item-controls">
+                        <button class="qty-btn" onclick="updateQuantity('${item.id}', ${item.quantity - 1})">−</button>
+                        <span class="qty-display">${item.quantity}</span>
+                        <button class="qty-btn" onclick="updateQuantity('${item.id}', ${item.quantity + 1})">+</button>
+                        <button class="remove-btn" onclick="removeItem('${item.id}')">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('orderTotals').style.display = 'block';
+            document.getElementById('subtotal').textContent = `$${currentOrder.subtotal.toFixed(2)}`;
+            document.getElementById('tax').textContent = `$${currentOrder.tax.toFixed(2)}`;
+            document.getElementById('discount').textContent = `$${currentOrder.discount.toFixed(2)}`;
+            document.getElementById('total').textContent = `$${currentOrder.total.toFixed(2)}`;
+            document.getElementById('cancelBtn').disabled = false;
+            document.getElementById('discountBtn').disabled = false;
+            document.getElementById('chargeBtn').disabled = false;
+        }
+
+        async function updateQuantity(itemId, newQuantity) {
+            try {
+                const response = await fetch(`${API_URL}/api/pos/update-quantity`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: itemId, quantity: newQuantity })
+                });
+                const data = await response.json();
+                if (data.success) { currentOrder = data.order; updateOrderDisplay(); }
+            } catch (error) { console.error('Error:', error); }
+        }
+
+        async function removeItem(itemId) {
+            try {
+                const response = await fetch(`${API_URL}/api/pos/remove-item`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: itemId })
+                });
+                const data = await response.json();
+                if (data.success) { currentOrder = data.order; updateOrderDisplay(); }
+            } catch (error) { console.error('Error:', error); }
+        }
+
+        async function applyDiscount() {
+            const discount = prompt('Enter discount amount:', '0');
+            if (discount === null) return;
+            try {
+                const response = await fetch(`${API_URL}/api/pos/apply-discount`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ discount: parseFloat(discount) || 0 })
+                });
+                const data = await response.json();
+                if (data.success) { currentOrder = data.order; updateOrderDisplay(); }
+            } catch (error) { console.error('Error:', error); }
+        }
+
+        async function cancelOrder() {
+            if (!confirm('Cancel order?')) return;
+            try {
+                const response = await fetch(`${API_URL}/api/pos/cancel-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                if (data.success) { currentOrder = null; updateOrderDisplay(); showNotification('✓ Cancelled!'); }
+            } catch (error) { console.error('Error:', error); }
+        }
+
+        async function openPaymentModal() {
+            if (!currentOrder) return;
+            const orderId = currentOrder.orderId;
+            document.getElementById('paymentModal').classList.add('active');
+            document.getElementById('modalTotal').textContent = `$${currentOrder.total.toFixed(2)}`;
+            document.getElementById('receivedAmount').value = '';
+            document.getElementById('changeDisplay').style.display = 'none';
+            document.getElementById('confirmPaymentBtn').disabled = true;
+            setTimeout(() => document.getElementById('receivedAmount').focus(), 100);
+
+            // --- Network Call (Wrapped in try/catch) ---
+            try {
+                const statusResponse = await fetch(`${API_URL}/api/customer-display/order/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'preparing',
+                        message: 'Your payment process has started.', // Changed message to reflect status
+                        estimatedTime: 0
+                    })
+                });
+
+                // Check if the response was successful (200-299)
+                if (statusResponse.ok) {
+                    const statusData = await statusResponse.json();
+                    console.log("Status update success:", statusData);
+                    // Optionally, show a notification here
+                    // showNotification('Status updated to Preparing.'); 
+                } else {
+                    console.error(`Status update failed: HTTP status ${statusResponse.status}`);
+                    // If the status update fails, log the error but allow the modal to stay open
+                }
+
+            } catch (error) {
+                // This catches network connection errors or malformed JSON responses
+                console.error('Error sending status update:', error);
+                // You may want to show an alert to the user here
+                // alert('Warning: Could not send status update to display.');
+            }
+        }
+
+        async function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+            const orderId = currentOrder.orderId;
+            // --- Network Call (Wrapped in try/catch) ---
+            try {
+                const statusResponse = await fetch(`${API_URL}/api/customer-display/order/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'preparing-cancel',
+                        message: 'Your payment process has started.', // Changed message to reflect status
+                        estimatedTime: 0
+                    })
+                });
+
+                // Check if the response was successful (200-299)
+                if (statusResponse.ok) {
+                    const statusData = await statusResponse.json();
+                    console.log("Status update success:", statusData);
+                    // Optionally, show a notification here
+                    // showNotification('Status updated to Preparing.'); 
+                } else {
+                    console.error(`Status update failed: HTTP status ${statusResponse.status}`);
+                    // If the status update fails, log the error but allow the modal to stay open
+                }
+
+            } catch (error) {
+                // This catches network connection errors or malformed JSON responses
+                console.error('Error sending status update:', error);
+                // You may want to show an alert to the user here
+                // alert('Warning: Could not send status update to display.');
+            }
+        }
+
+        function setQuickAmount(amount) {
+            document.getElementById('receivedAmount').value = amount.toFixed(2);
+            calculateChange();
+        }
+
+        function setExactAmount() {
+            if (!currentOrder) return;
+            document.getElementById('receivedAmount').value = currentOrder.total.toFixed(2);
+            calculateChange();
+        }
+
+        function clearAmount() {
+            document.getElementById('receivedAmount').value = '';
+            document.getElementById('changeDisplay').style.display = 'none';
+            document.getElementById('confirmPaymentBtn').disabled = true;
+        }
+
+        function calculateChange() {
+            if (!currentOrder) return;
+            const received = parseFloat(document.getElementById('receivedAmount').value) || 0;
+            const total = currentOrder.total;
+            const change = received - total;
+            const changeDisplay = document.getElementById('changeDisplay');
+            const changeAmount = document.getElementById('changeAmount');
+            const confirmBtn = document.getElementById('confirmPaymentBtn');
+            if (received > 0) {
+                changeDisplay.style.display = 'block';
+                if (change >= 0) {
+                    changeAmount.textContent = `$${change.toFixed(2)}`;
+                    changeAmount.classList.remove('negative');
+                    confirmBtn.disabled = false;
+                } else {
+                    changeAmount.textContent = `$${Math.abs(change).toFixed(2)} SHORT`;
+                    changeAmount.classList.add('negative');
+                    confirmBtn.disabled = true;
+                }
+            } else {
+                changeDisplay.style.display = 'none';
+                confirmBtn.disabled = true;
+            }
+        }
+
+        // ----------------------------------------------------------------------------------
+        // *** CORRECTED PAYMENT FUNCTION (Targets /api/pos/complete-order) ***
+        // ----------------------------------------------------------------------------------
+        async function confirmPayment() {
+
+            if (!currentOrder) return;
+            const receivedAmount = parseFloat(document.getElementById('receivedAmount').value) || 0;
+            const orderId = currentOrder.orderId; // Get the active order ID
+
+            // 1. Validation
+            if (receivedAmount < currentOrder.total) {
+                alert('Insufficient payment! Received amount is less than the total.');
+                return;
+            }
+
+            closePaymentModal(); // Close the modal immediately
+
+            try {
+                // --- STEP 1: Update the Status (PUT request to the desired /status endpoint) ---
+                showNotification('1/2: Sending final status to display...');
+                const statusResponse = await fetch(`${API_URL}/api/customer-display/order/${orderId}/status`, {
+                    method: 'PUT', // <-- Using PUT method as requested
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'completed', // Final status
+                        message: 'Payment received. Order completed!',
+                        estimatedTime: 0
+                    })
+                });
+
+                const statusData = await statusResponse.json();
+
+                if (!statusData.success) {
+                    alert(`Status update failed: ${statusData.error}. Cannot complete transaction.`);
+                    return;
+                }
+
+                // --- STEP 2: Clear the Display (POST request to the dedicated /clear endpoint) ---
+                // This call also sets currentOrder = null on the server.
+                showNotification('2/2: Clearing server state and display...');
+                const clearResponse = await fetch(`${API_URL}/api/customer-display/clear`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: 'payment_completed' })
+                });
+
+                const clearData = await clearResponse.json();
+
+                if (clearData.success) {
+                    // --- STEP 3: Client Cleanup ---
+                    currentOrder = null;
+                    updateOrderDisplay(); // Clears the cashier's local order state
+                    showNotification('✓ Transaction Finalized and POS Screen Reset.');
+                } else {
+                    alert(`Error clearing display: ${clearData.error}. Manual restart may be required.`);
+                }
+
+            } catch (error) {
+                console.error('Network Error:', error);
+                alert('Could not complete payment due to a network error. Check server connectivity.');
+            }
+        }
+        // ----------------------------------------------------------------------------------
+
+        initializeMenu();
+        checkConnection();
+        setInterval(checkConnection, 5000);
+    </script>
+</body>
+
+</html>
