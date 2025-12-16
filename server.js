@@ -464,10 +464,10 @@ server.listen(PORT, () => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🚀 POS Backend Server Started!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📱 Web POS Interface: http://localhost:${PORT}`);
+    console.log(`📱 Web POS Interface: https://pos-backend-0tj2.onrender.com`);
     console.log(`📺 Socket.IO Endpoint: ws://localhost:${PORT}/customer-display`);
-    console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
-    console.log(`💚 Health Check: http://localhost:${PORT}/health`);
+    console.log(`🔗 API Base URL: https://pos-backend-0tj2.onrender.com/api`);
+    console.log(`💚 Health Check: https://pos-backend-0tj2.onrender.com/health`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📋 Available Endpoints:');
     console.log('   POST   /api/pos/add-item (Now supports image field)');
